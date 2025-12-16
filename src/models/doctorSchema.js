@@ -12,10 +12,10 @@ const doctorSchema = new mongoose.Schema(
 
     // availableSlots: [{ type: String, required: true }] // ["10:00 AM", "11:00 AM"]
     availableDays: ["Mon", "Tue", "Fri"],
-availableSlots: ["10:00 AM", "11:00 AM"]
+    availableSlots: ["10:00 AM", "11:00 AM"]
 
   },
   { timestamps: true }
 );
 
-export const Doctor = mongoose.model('Doctor' , doctorSchema)
+export const Doctor = mongoose.model('Doctor', doctorSchema)
