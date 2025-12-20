@@ -32,14 +32,17 @@ export const createDepartment = async (req, res) => {
   }
 };
 
- 
+
 export const addDoctor = async (req, res) => {
   try {
-    const { name, email, phone, departmentId, specialization , description ,experience } = req.body;
+    const { name, email, phone, departmentId, specialization, description, experience, availableDays, availableSlots } = req.body;
 
-    if (!name || !email || !phone || !departmentId || !specialization || specialization.trim() === "" || description.trim() === "" || !experience) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
+    if (
+  !name ||  !email || !phone || !departmentId ||  !specialization ||  specialization.trim() === "" || !description || description.trim() === "" ||  !experience ||  !Array.isArray(availableDays) ||  availableDays.length === 0 ||  !Array.isArray(availableSlots) ||  availableSlots.length === 0
+) {
+  return res.status(400).json({ message: "Missing required fields" });
+}
+
 
     // check department
     const department = await Department.findById(departmentId);
@@ -66,12 +69,14 @@ export const addDoctor = async (req, res) => {
 
     // 2️⃣ create doctor profile
     const doctor = await Doctor.create({
-      userId: user._id,
+      doctorId: user._id, 
       phone,
       description,
       experience: experience,
       specialization: specialization,
-      department: departmentId, 
+      department: departmentId,
+      availableDays,
+      availableSlots
     });
 
     return res.status(201).json({
