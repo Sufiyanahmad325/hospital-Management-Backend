@@ -9,12 +9,11 @@ import { getNextFreeSlot } from "../utils/getFirstAvailableTimeSlot.js";
 export const bookAppointment = async (req, res) => {
   try {
     const { doctorId, date } = req.body;
-    const patientsId = req.user.id;
-
+    const userid = req.user._id;
 
 
     // 1️⃣ Patient
-    const patient = await Patient.findOne({ patientId: patientsId });
+    const patient = await Patient.findOne({ user_id: userid });
     if (!patient) {
       return res
         .status(404)
@@ -22,13 +21,15 @@ export const bookAppointment = async (req, res) => {
     }
 
     // 2️⃣ Doctor
-    const doctor = await Doctor.findOne({ doctorId: doctorId });
+    const doctor = await Doctor.findOne({ _id: doctorId });
     if (!doctor) {
       return res
         .status(404)
         .json(new ApiResponse(404, null, "Doctor not found"));
     }
-    console.log('=====================================================')
+
+
+
 
     // 3️⃣ Day availability check
     const isAvailableDate = await isDateWithin20Days(date);
@@ -49,7 +50,7 @@ export const bookAppointment = async (req, res) => {
         );
     }
 
-    const isAvailableTime = await getNextFreeSlot(doctor.doctorId, date);
+    const isAvailableTime = await getNextFreeSlot(doctor._id, date);
 
     if (!isAvailableTime) {
       return res
@@ -77,7 +78,7 @@ export const bookAppointment = async (req, res) => {
 
     // 5️⃣ Double booking check
     const existingAppointment = await Appointment.findOne({
-      patientId: patient.patientId,
+      patientId: patient._id,
       doctorId,
       date,
       dayName: appointmentDayName,
@@ -92,27 +93,11 @@ export const bookAppointment = async (req, res) => {
         );
     }
 
-    // 4️⃣ Check if the patient already has an appointment with this doctor on the selected date and time 
-    console.log(isAvailableTime)
 
-    const isAnyOneBooked = await Appointment.findOne({
-      doctorId,
-      date,
-      timeSlot: isAvailableTime,
-      status: "pending",
-    });
-
-    if (isAnyOneBooked) {
-      return res
-        .status(400)
-        .json(
-          new ApiResponse(400, null, "Selected time slot is already booked")
-        );
-    }
 
     // 6️⃣ Create appointment
     const appointment = await Appointment.create({
-      patientId: patient.patientId,
+      patientId: patient._id,
       doctorId,
       timeSlot: isAvailableTime,
       dayName: appointmentDayName,
@@ -138,6 +123,41 @@ export const bookAppointment = async (req, res) => {
 
 
 
+
+
+
+
+export const getMyAppointments = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    console.log(userId)
+
+    // 1️⃣ Patient profile find (User ID se)
+    const patient = await Patient.findOne({ user_id: userId });
+    if (!patient) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Patient not found"));
+    }
+
+    // 2️⃣ Appointments find (Patient PROFILE ID se)
+    const appointments = await Appointment.find({
+      patientId: patient._id,   // ✅ FIXED
+    })
+      .populate("doctorId", "experience specialization ")  // doctor details ke liye
+      .sort({ date: -1 }); // latest pehle
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, appointments, "Appointments fetched successfully")
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, error.message));
+  }
+};
 
 
 
