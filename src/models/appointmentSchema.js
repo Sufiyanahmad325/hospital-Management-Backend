@@ -18,7 +18,9 @@ const appointmentSchema = new mongoose.Schema(
 
     timeSlot: { type: String, required: true }, // "10:00 AM"
 
-    status: {
+    dayName: { type: String, required: true }, // "Mon", "Tue"
+
+    status: { 
       type: String,
       enum: ["pending", "cancelled", "completed"],
       default: "pending"
