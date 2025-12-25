@@ -69,7 +69,7 @@ export const addDoctor = async (req, res) => {
 
     // 2️⃣ create doctor profile
     const doctor = await Doctor.create({
-      doctorId: user._id, 
+      user_id: user._id, 
       phone,
       description,
       experience: experience,
@@ -101,7 +101,7 @@ export const getAllDoctors = async (req, res) => {
   try {
     const doctors = await Doctor.find()
       .populate("department", "nameOfDepartment") // doctor me user_id hai doctor ki to kya ham usme se user ka name and email lana chahte hai to ham populate kr skte hai
-      .populate("userId", "name email"); // ye user se name and email le aayega
+      .populate("doctorId", "name email"); // ye user se name and email le aayega
 
     res.status(200).json({
       total: doctors.length,
