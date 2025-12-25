@@ -129,7 +129,7 @@ export const bookAppointment = async (req, res) => {
 
 
 
-
+// get my appointments
 export const getMyAppointments = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -147,9 +147,18 @@ export const getMyAppointments = async (req, res) => {
     //  Appointments find (Patient PROFILE ID se)
     const appointments = await Appointment.find({
       patientId: patient._id,   
+      status: "pending",
+
     })
       .populate("doctorId", "experience specialization ")  // doctor details ke liye
       .sort({ date: -1 }); // latest pehle
+
+      if (appointments.length === 0) {
+        return res
+          .status(200)
+          .json(new ApiResponse(200, [], "No upcoming appointments found"));
+      }
+
     return res
       .status(200)
       .json(
@@ -165,3 +174,54 @@ export const getMyAppointments = async (req, res) => {
 
 
 
+// get cancel appointment
+export const cancelAppointment = async (req, res) => {
+  try {
+    const appointmentId = req.params.appointmentId;
+    console.log('appointment ===========>' , appointmentId)
+    const userId = req.user._id;
+
+    const patient = await Patient.findOne({ user_id: userId });
+    if (!patient) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Patient not found"));
+    }
+
+    const appointment = await Appointment.findOne({
+      _id: appointmentId,
+      patientId: patient._id,
+    });
+
+    if (!appointment) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Appointment not found"));
+    }
+
+    if (appointment.status !== "pending") {
+      return res
+        .status(400)
+        .json(
+          new ApiResponse(
+            400,
+            null,
+            "Only pending appointments can be cancelled"
+          )
+        );
+    }
+
+    appointment.status = "cancelled";
+    await appointment.save({validateBeforeSave: false});
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, appointment, "Appointment cancelled successfully")
+      );
+  } catch (error) {
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, error.message));
+  }
+};
