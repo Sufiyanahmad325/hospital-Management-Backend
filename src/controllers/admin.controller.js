@@ -213,7 +213,81 @@ export const getTodayPendingAppointments = asyncHandler(async (req, res) => {
 });
 
 
+export const getAllDepartments = asyncHandler(async (req, res) => {
+  const isAvailableAdmin = await User.find({
+    _id: req.user._id,
+    role: 'admin'
+  })
+  if (!isAvailableAdmin) {
+    return res.status(403).json({ message: 'Access denied , you are not admin' })
+  }
+  const departments = await Department.find();
+  if (!departments || departments.length === 0) {
+    return res.status(404).json(
+      new ApiResponse(404, "No departments found")
+    );
+  }
+  return res.status(200).json(
+    new ApiResponse(200, "Departments fetched successfully", departments)
+  );
+});
 
+
+export const completeAppointmentByAdmin = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+  const isAvailableAdmin = await User.find({
+    _id: req.user._id,
+    role: 'admin'
+  })
+
+  if (!isAvailableAdmin) {
+    return res.status(403).json({ message: 'Access denied , you are not admin' })
+  }
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) {
+    return res.status(404).json(
+      new ApiResponse(404, "Appointment not found")
+    );
+  }
+
+  appointment.status = 'completed',
+    await appointment.save({ validateBeforeSave: false });
+
+  return res.status(200).json(
+    new ApiResponse(200, "Appointment completed successfully by admin", appointment)
+  );
+});
+
+
+
+
+export const cancelAppointmentByAdmin = asyncHandler(async (req, res) => {
+  const { appointmentId } = req.params;
+
+  const isAvailableAdmin = await User.find({
+    _id: req.user._id,
+    role: 'admin'
+  })
+  if (!isAvailableAdmin) {
+    return res.status(403).json({ message: 'Access denied , you are not admin' })
+  }
+
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) {
+    return res.status(404).json(
+      new ApiResponse(404, "Appointment not found")
+    );
+  }
+
+  appointment.status = 'cancelled by admin',
+
+    await appointment.save({ validateBeforeSave: false });
+
+  return res.status(200).json(
+    new ApiResponse(200, "Appointment cancelled successfully by admin", appointment)
+  );
+
+})
 
 
 
