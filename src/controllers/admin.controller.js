@@ -159,6 +159,32 @@ export const getAllDoctorAppointments = asyncHandler(async (req, res) => {
 });
 
 
+export const getAllCompleteAppointment = asyncHandler(async (req, res) => {
+
+  const isAvailableAdmin = await User.find({
+    _id: req.user._id,
+    role: 'admin'
+  })
+
+  if (!isAvailableAdmin) {
+    return res.status(403).json({ message: 'Access denied , you are not admin' })
+  }
+
+  const completeAppointment = await Appointment.find({ status: 'completed' })
+
+  if (!completeAppointment || completeAppointment.length === 0) {
+    return res.status(404).json({ message: 'No completed appointment found' })
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, 'Completed appointments fetched successfully', completeAppointment)
+  )
+
+})
+
+
+
+
 
 
 
