@@ -1,7 +1,10 @@
+import { Appointment } from "../models/appointmentSchema.js";
 import { Department } from "../models/departmentSchema.js";
 import { Doctor } from "../models/doctorSchema.js";
 import { Patient } from "../models/patientSchema.js";
 import { User } from "../models/userSchema.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 
@@ -38,10 +41,10 @@ export const addDoctor = async (req, res) => {
     const { name, email, phone, departmentId, specialization, description, experience, availableDays, availableSlots } = req.body;
 
     if (
-  !name ||  !email || !phone || !departmentId ||  !specialization ||  specialization.trim() === "" || !description || description.trim() === "" ||  !experience ||  !Array.isArray(availableDays) ||  availableDays.length === 0 ||  !Array.isArray(availableSlots) ||  availableSlots.length === 0
-) {
-  return res.status(400).json({ message: "Missing required fields" });
-}
+      !name || !email || !phone || !departmentId || !specialization || specialization.trim() === "" || !description || description.trim() === "" || !experience || !Array.isArray(availableDays) || availableDays.length === 0 || !Array.isArray(availableSlots) || availableSlots.length === 0
+    ) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
 
     // check department
@@ -69,7 +72,7 @@ export const addDoctor = async (req, res) => {
 
     // 2️⃣ create doctor profile
     const doctor = await Doctor.create({
-      user_id: user._id, 
+      user_id: user._id,
       phone,
       description,
       experience: experience,
@@ -128,3 +131,37 @@ export const getAllPatients = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export const getAllDoctorAppointments = asyncHandler(async (req, res) => {
+  const { _id } = req.user; // it is coming from verifyJWT middleware
+  // 1️⃣ Find doctor profile
+  const admin = await User.findOne({ _id: _id });
+  if (!admin) {
+    return res.status(404).json({ message: "Admin profile not found" });
+  }
+  // 2️⃣ Get appointments for this doctor
+  const appointments = await Appointment.find()
+    .populate({
+      path: "patientId",
+      populate: { path: "user_id", select: "name email" },
+    })
+    .sort({ createdAt: 1 }); // it will sort by ascending order of creation time means older appointment will come first
+
+  if (!appointments || appointments.length === 0) {
+    return res.status(404).json({ message: "No appointments found" });
+  }
+
+  return res.status(200).json({
+    message: "Doctor appointments fetched successfully",
+    appointments,
+  });
+});
+
+
+
+
+
+
+
+
